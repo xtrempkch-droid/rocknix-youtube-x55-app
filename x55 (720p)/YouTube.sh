@@ -10,6 +10,12 @@ fi
 SCRIPT_PATH="$BASE_PATH/ports/scripts/yt_x55.py"
 PYTHON_BIN="python3"
 
+# Se houver indicação de que é um R36S, ajusta a escala
+if [ -f "/etc/os-release" ] && grep -q "ArkOS" "/etc/os-release"; then
+    export TEXTUAL_COLUMNS=60
+    export TEXTUAL_LINES=20
+fi
+
 # Limpa a tela do terminal para uma interface limpa
 clear
 echo "--- X55 YOUTUBE SYSTEM CHECK ---"
