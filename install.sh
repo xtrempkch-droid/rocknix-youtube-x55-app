@@ -1,45 +1,35 @@
 #!/bin/bash
 
-# Cores para o terminal
+# Cores
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m' # Sem cor
+NC='\033[0m'
 
-echo -e "${BLUE}===========================================${NC}"
-echo -e "${GREEN}   Instalador YouTube App para X55 / R36S  ${NC}"
-echo -e "${BLUE}===========================================${NC}"
+echo "Iniciando instalacao do YouTube App..."
 
-# 1. Detectar o caminho das ROMS (X55 usa /storage, R36S usa /roms)
+# 1. Detecta o sistema de arquivos (X55 vs R36S)
 if [ -d "/storage/roms" ]; then
-    ROM_PATH="/storage/roms"
+    BASE="/storage/roms" # JELOS / ROCKNIX
 else
-    ROM_PATH="/roms"
+    BASE="/roms" # ArkOS / AmberELEC
 fi
 
-PORTS_PATH="$ROM_PATH/ports"
-SCRIPTS_PATH="$PORTS_PATH/scripts"
+# 2. Define caminhos
+PORT_DIR="$BASE/ports"
+SCRIPT_DIR="$PORT_DIR/scripts"
 
-echo -e "-> Detectado caminho de Ports em: $PORTS_PATH"
+# 3. Cria pastas
+mkdir -p "$SCRIPT_DIR"
 
-# 2. Criar diretórios se não existirem
-mkdir -p "$SCRIPTS_PATH"
+# 4. Download dos arquivos (apontando para o seu repo)
+echo "Baixando arquivos..."
+curl -L "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/yt_x55.py" -o "$SCRIPT_DIR/yt_app.py"
+curl -L "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/YouTube.sh" -o "$PORT_DIR/YouTube.sh"
 
-# 3. Baixar os arquivos do seu repositório GitHub
-echo -e "-> Baixando arquivos do repositório..."
-# Substitua pelo link 'raw' correto do seu GitHub
-curl -sL "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/yt_x55.py" -o "$SCRIPTS_PATH/yt_x55.py"
-curl -sL "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/YouTube.sh" -o "$PORTS_PATH/YouTube.sh"
+# 5. Permissões
+chmod +x "$PORT_DIR/YouTube.sh"
 
-# 4. Dar permissões de execução
-chmod +x "$PORTS_PATH/YouTube.sh"
-
-# 5. Instalar dependências Python
-echo -e "-> Instalando dependências (yt-dlp e Textual)..."
-python3 -m pip install --upgrade pip
+# 6. Dependências
+echo "Instalando dependencias..."
 python3 -m pip install yt-dlp textual
 
-echo -e "${GREEN}===========================================${NC}"
-echo -e "      INSTALAÇÃO CONCLUÍDA COM SUCESSO!     "
-echo -e "   Reinicie o EmulationStation para ver o   "
-echo -e "      app na sua lista de Ports.            "
-echo -e "${GREEN}===========================================${NC}"
+echo -e "${GREEN}Pronto! O app foi instalado em $PORT_DIR/YouTube.sh${NC}"
