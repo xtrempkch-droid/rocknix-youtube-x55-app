@@ -1,20 +1,20 @@
+#!/usr/bin/env python3
 import asyncio
 import subprocess
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, ListItem, ListView, Label, Input, Static
-from textual.containers import Vertical, Horizontal
+from textual.widgets import Header, Footer, ListItem, ListView, Label, Input
+from textual.containers import Vertical
 
 class YouTubeTV(App):
     TITLE = "X55 Ultra-Light YouTube"
     BINDINGS = [
         ("q", "quit", "Sair"),
         ("s", "focus_search", "Buscar"),
-        ("backspace", "back_to_list", "Voltar")
+        ("backspace", "back_to_list", "Voltar"),
     ]
 
     CSS = """
-    #main_container { layout: grid; grid-size: 1; }
-    ListView { width: 100%; height: 1fr; border: double $accent; }
+    ListView { width: 100%; height: 1fr; border: double $accent; background: $surface; }
     ListItem { padding: 1; margin: 0 1; background: $surface; }
     ListItem:focus { background: $accent 50%; border: tall $accent; }
     #search_box { margin: 1; border: round $primary; }
@@ -30,56 +30,107 @@ class YouTubeTV(App):
         )
         yield Footer()
 
+    async def on_mount(self) -> None:
+        # Foca a busca por padrão
+        self.query_one("#search_box").focus()
+
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         termo = event.value.strip()
         if termo:
             await self.buscar_videos_otimizado(termo)
 
-    async def buscar_videos_otimizado(self, busca):
+    async def buscar_videos_otimizado(self, busca: str) -> None:
+        """
+        Busca usando yt-dlp de forma assíncrona e rápida (--flat-playlist + --print).
+        Evita travar a TUI ao rodar o processo em background.
+        """
         lista = self.query_one("#video_list", ListView)
         lista.clear()
-        self.notify(f"Buscando: {busca}...", timeout=2)
-
-        # Otimização: --flat-playlist extrai dados sem entrar em cada vídeo (MUITO mais rápido)
-        # --print limpa o output para vir apenas Titulo + ID
+        lista.append(ListItem(Label("⏳ Buscando...", classes="loading"), id="loading"))
+        search_input = self.query_one("#search_box", Input)
+        search_input.disabled = True
         cmd = [
-            "yt-dlp", 
-            f"ytsearch10:{busca}", 
-            "--flat-playlist", 
+            "yt-dlp",
+            f"ytsearch10:{busca}",
+            "--flat-playlist",
             "--print", "%(title)s|%(id)s"
         ]
 
         try:
-            # Roda o comando em background para não congelar a TUI
             proc = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            stdout, _ = await proc.communicate()
-            
-            for line in stdout.decode().splitlines():
+            stdout, stderr = await proc.communicate()
+            lista.clear()
+
+            if proc.returncode != 0:
+                err_text = stderr.decode(errors="ignore").strip()
+                lista.append(ListItem(Label("Erro na busca. Veja logs.")))
+                self.log(f"yt-dlp stderr: {err_text}")
+                return
+
+            for line in stdout.decode(errors="ignore").splitlines():
                 if "|" in line:
-                    titulo, video_id = line.split("|")
-                    item = ListItem(Label(f"📺 {titulo[:60]}..."), id=f"vid_{video_id}")
+                    titulo, video_id = line.split("|", 1)
+                    display = titulo.strip()
+                    if len(display) > 80:
+                        display = display[:77] + "..."
+                    item = ListItem(Label(f"📺 {display}"), id=f"vid_{video_id.strip()}")
                     lista.append(item)
-            
-            lista.focus()
+
+            if len(lista.children) == 0:
+                lista.append(ListItem(Label("Nenhum resultado encontrado.")))
+            else:
+                lista.focus()
+
+        except FileNotFoundError:
+            lista.clear()
+            lista.append(ListItem(Label("yt-dlp não encontrado. Instale yt-dlp.")))
         except Exception as e:
-            self.notify("Erro na busca!", severity="error")
+            lista.clear()
+            lista.append(ListItem(Label("Erro ao executar a busca.")))
+            self.log(f"Exception in buscar_videos_otimizado: {e}")
+        finally:
+            search_input.disabled = False
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
+        # event.item é o ListItem selecionado
+        if not getattr(event.item, "id", None):
+            return
         video_id = event.item.id.replace("vid_", "")
         url = f"https://www.youtube.com/watch?v={video_id}"
-        
-        # Otimização X55: Chama o MPV configurado para Rockchip (DRM/GBM)
-        # --ytdl-format="bestvideo[height<=720]+bestaudio" evita 4K que trava o chip
-        subprocess.run([
-            "mpv", 
-            "--fs", 
-            "--vo=gpu",      # Usa aceleração de GPU
-            "--hwdec=auto",   # Tenta decodificação de hardware (RK3566)
-            "--ytdl-format=best[height<=720]", # Limita a 720p para fluidez total
+        self.suspend_video(url)
+
+    def suspend_video(self, url: str) -> None:
+        """
+        Suspende a TUI e executa o mpv de forma que o player ocupe o terminal.
+        Usa self.suspend() como contexto (Textual provê essa interface para pausar a UI).
+        """
+        mpv_cmd = [
+            "mpv",
+            "--fs",
+            "--vo=gpu",
+            "--hwdec=auto",
+            "--ytdl-format=best[height<=720]",
             url
-        ])
+        ]
+        try:
+            # self.suspend() pausa a UI e restaura no retorno
+            with self.suspend():
+                subprocess.run(mpv_cmd)
+        except FileNotFoundError:
+            self.notify("mpv não encontrado. Instale mpv.", severity="error")
+        except Exception as e:
+            self.notify("Erro ao abrir o player.", severity="error")
+            self.log(f"Exception in suspend_video: {e}")
+
+    def action_focus_search(self) -> None:
+        self.query_one("#search_box", Input).focus()
+
+    def action_back_to_list(self) -> None:
+        self.query_one("#video_list", ListView).focus()
 
 if __name__ == "__main__":
     YouTubeTV().run()
