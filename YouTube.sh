@@ -1,42 +1,49 @@
 #!/bin/bash
 
-# Detecta o caminho base (X55 costuma usar /storage/roms ou /roms)
+# ==========================================================
+# LAUNCHER UNIVERSAL YOUTUBE (X55 & R36S)
+# ==========================================================
+
+# 1. Detectar o caminho base do sistema
 if [ -d "/storage/roms" ]; then
+    # Caminho padrão JELOS / ROCKNIX (X55)
     BASE_PATH="/storage/roms"
 else
+    # Caminho padrão ArkOS / AmberELEC (R36S)
     BASE_PATH="/roms"
 fi
 
-SCRIPT_PATH="$BASE_PATH/ports/scripts/yt_x55.py"
+# 2. Definir caminhos dos arquivos
+SCRIPT_PATH="$BASE_PATH/ports/scripts/yt_app.py"
 PYTHON_BIN="python3"
 
-# Se houver indicação de que é um R36S, ajusta a escala
-if [ -f "/etc/os-release" ] && grep -q "ArkOS" "/etc/os-release"; then
-    export TEXTUAL_COLUMNS=60
-    export TEXTUAL_LINES=20
-fi
-
-# Limpa a tela do terminal para uma interface limpa
 clear
-echo "--- X55 YOUTUBE SYSTEM CHECK ---"
+echo "------------------------------------------"
+echo "        INICIANDO YOUTUBE PORTABLE        "
+echo "------------------------------------------"
 
-# 1. Verifica Internet
+# 3. Verificação de Internet e Auto-Update
 wget -q --spider http://google.com
 if [ $? -eq 0 ]; then
-    echo "[OK] Conectado. Verificando atualizacoes..."
-    
-    # Instala/Atualiza yt-dlp e Textual silenciosamente
-    $PYTHON_BIN -m pip install --upgrade pip &> /dev/null
-    $PYTHON_BIN -m pip install yt-dlp textual &> /dev/null
-    echo "[OK] Componentes atualizados."
+    echo "[OK] Internet detectada. Verificando atualizacoes..."
+    # Atualiza o yt-dlp em background para não atrasar o início
+    $PYTHON_BIN -m pip install -U yt-dlp &>/dev/null &
+    echo "[OK] Otimizacoes de rede aplicadas."
 else
-    echo "[!] Offline: Pulando atualizacoes."
+    echo "[!] Modo Offline: Verifique seu Wi-Fi."
 fi
 
-# 2. Configurações de GPU para o Chip RK3566 do X55
+# 4. Configurações de GPU para Rockchip (RK3566/RK3326)
 export SDL_VIDEODRIVER=kmsdrm
 export MESA_GL_VERSION_OVERRIDE=3.3
 
-# 3. Executa o App
-echo "Iniciando interface..."
-$PYTHON_BIN $SCRIPT_PATH
+# 5. Executar o Aplicativo
+if [ -f "$SCRIPT_PATH" ]; then
+    echo "Abrindo interface..."
+    $PYTHON_BIN "$SCRIPT_PATH"
+else
+    echo "ERRO: Script nao encontrado em:"
+    echo "$SCRIPT_PATH"
+    echo "Por favor, execute o install.sh novamente."
+    sleep 5
+fi
