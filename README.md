@@ -1,6 +1,7 @@
 📺 YouTube App for X55 & R36S (Rocknix/ArkOS/JELOS)
 
 Português | English
+
 <a name="português"></a>🇧🇷 Português
 
 Uma interface leve (TUI) e navegável via botões físicos para assistir YouTube em dispositivos portáteis Linux (Powkiddy X55, R36S, etc).
