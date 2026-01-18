@@ -17,6 +17,7 @@ pip install --upgrade pip
 # Instale o yt-dlp (ferramenta que extrai o vídeo)
 pip install yt-dlp
 
+
 Como usar no X55
 
     Mapeamento de Botões: No sistema JELOS/ROCKNIX do X55, o D-Pad e os botões costumam ser mapeados para as setas do teclado e a tecla Enter.
@@ -29,10 +30,7 @@ Como usar no X55
 
     Performance: O script usa o yt-dlp apenas para buscar informações leves. O vídeo pesado é processado pelo mpv, que no X55 é otimizado para o chip RK3566, garantindo que não trave.
 
-
-
-
-    v2
+   v2
 
 
     Como integrar no menu do JELOS/ROCKNIX
