@@ -1,35 +1,26 @@
 #!/bin/bash
+# INSTALADOR OFICIAL ROCKNIX-YOUTUBE-X55
 
-# Cores
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-echo "Iniciando instalacao do YouTube App..."
-
-# 1. Detecta o sistema de arquivos (X55 vs R36S)
 if [ -d "/storage/roms" ]; then
-    BASE="/storage/roms" # JELOS / ROCKNIX
+    BASE="/storage/roms"
 else
-    BASE="/roms" # ArkOS / AmberELEC
+    BASE="/roms"
 fi
 
-# 2. Define caminhos
 PORT_DIR="$BASE/ports"
 SCRIPT_DIR="$PORT_DIR/scripts"
 
-# 3. Cria pastas
 mkdir -p "$SCRIPT_DIR"
 
-# 4. Download dos arquivos (apontando para o seu repo)
-echo "Baixando arquivos..."
-curl -L "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/yt_x55.py" -o "$SCRIPT_DIR/yt_app.py"
+echo "A descarregar ficheiros do repositório..."
+
+# ATENÇÃO: Aqui usamos o nome yt_x55.py que é o que está no teu GitHub
+curl -L "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/yt_x55.py" -o "$SCRIPT_DIR/yt_x55.py"
 curl -L "https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/YouTube.sh" -o "$PORT_DIR/YouTube.sh"
 
-# 5. Permissões
 chmod +x "$PORT_DIR/YouTube.sh"
 
-# 6. Dependências
-echo "Instalando dependencias..."
+echo "A instalar dependências..."
 python3 -m pip install yt-dlp textual
 
-echo -e "${GREEN}Pronto! O app foi instalado em $PORT_DIR/YouTube.sh${NC}"
+echo "Instalação concluída! Reinicia o EmulationStation."
