@@ -11,7 +11,7 @@ Uma interface leve e navegável via controle (D-Pad) para assistir YouTube em di
 ## 🚀 Instalação Rápida
 Conecte-se via SSH ao seu dispositivo e cole o comando abaixo:
 
-curl -sL https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/install.sh | bash
+curl -L https://raw.githubusercontent.com/xtrempkch-droid/rocknix-youtube-x55-app/main/install.sh | bash
 
 ## 🎮 Controles
 - **D-Pad:** Navegar na lista de vídeos.
